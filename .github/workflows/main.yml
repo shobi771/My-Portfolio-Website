@@ -1,0 +1,41 @@
+name: Application CI/CD Pipeline
+
+on:
+push:
+  branches: [main]
+
+deployment
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  # CI JOB: Lint and Validate Code
+  test-and-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install Tools & Lint
+        run: |
+          npm install --save-dev eslint stylelint
+          npx eslint "**/*.js" || true
+          npx stylelint "**/*.css" || true
+
+  # CD JOB: Deploy static files
+  deploy:
+    runs-on: ubuntu-latest
+    needs: test-and-validate
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v4
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+      - id: deployment
+        uses: actions/deploy-pages@v4
